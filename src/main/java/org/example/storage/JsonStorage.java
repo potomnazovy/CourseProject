@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.example.adaptor.LocalDateTimeAdaptor;
+import org.example.exception.StorageException;
 import org.example.model.AggregatedRecord;
 
 import java.io.IOException;
@@ -56,7 +57,7 @@ public class JsonStorage implements Storage
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка в записи в файл: " + e);
+      throw new StorageException("Ошибка в записи в файл: " + this.path, e);
     }
   }
 
@@ -78,7 +79,7 @@ public class JsonStorage implements Storage
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка в чтении json файла: " + e);
+      throw new StorageException("Ошибка в чтении json файла: " + this.path, e);
     }
   }
 
@@ -122,7 +123,7 @@ public class JsonStorage implements Storage
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка в чтении json файла по заданному источнику: " + e);
+      throw new StorageException("Ошибка в чтении json файла по заданному источнику: " + this.path, e);
     }
   }
 }

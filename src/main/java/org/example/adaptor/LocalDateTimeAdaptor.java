@@ -4,6 +4,7 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import org.example.exception.ParsingException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -26,7 +27,7 @@ public class LocalDateTimeAdaptor extends TypeAdapter< LocalDateTime >
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка записи времени в JSON файл: " + e);
+      throw new ParsingException("Ошибка записи времени в JSON файл: ", e);
     }
   }
 
@@ -45,7 +46,7 @@ public class LocalDateTimeAdaptor extends TypeAdapter< LocalDateTime >
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка чтения времени из JSON файла: " + e);
+      throw new ParsingException("Ошибка чтения времени из JSON файла: ", e);
     }
   }
 }

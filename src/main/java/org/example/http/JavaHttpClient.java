@@ -1,5 +1,7 @@
 package org.example.http;
 
+import org.example.exception.AppException;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -18,7 +20,7 @@ public class JavaHttpClient implements HttpClient
 
     if (response.statusCode() < 200 || response.statusCode() >= 300)
     {
-      throw new RuntimeException("HTTP error: " + response.statusCode());
+      throw new AppException("HTTP error: " + response.statusCode());
     }
 
     return response.body();

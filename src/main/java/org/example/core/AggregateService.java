@@ -1,6 +1,7 @@
 package org.example.core;
 
 import com.google.gson.JsonSyntaxException;
+import org.example.exception.AppException;
 import org.example.http.HttpClient;
 import org.example.model.AggregatedRecord;
 import org.example.model.QueryParams;
@@ -75,6 +76,10 @@ public class AggregateService
       {
         logger.error("Опрос API {} был прерван: {}", name, e.getMessage());
         Thread.currentThread().interrupt();
+      }
+      catch (AppException e)
+      {
+        logger.error("Ошибка приложения при опросе {}: {}", name, e.getMessage());
       }
       catch (JsonSyntaxException e)
       {

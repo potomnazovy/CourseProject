@@ -1,5 +1,6 @@
 package org.example.storage;
 
+import org.example.exception.StorageException;
 import org.example.model.AggregatedRecord;
 
 import java.io.BufferedWriter;
@@ -59,7 +60,7 @@ public class CsvStorage implements Storage
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка в записи в файл: " + e);
+      throw new StorageException("Ошибка в записи в файл: " + this.path, e);
     }
   }
 
@@ -100,7 +101,7 @@ public class CsvStorage implements Storage
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка в чтении csv файла: " + e);
+      throw new StorageException("Ошибка в чтении csv файла: " + this.path, e);
     }
   }
 
@@ -148,7 +149,7 @@ public class CsvStorage implements Storage
     }
     catch (IOException e)
     {
-      throw new RuntimeException("Ошибка в чтении csv файла по заданному источнику: " + e);
+      throw new StorageException("Ошибка в чтении csv файла по заданному источнику: " + this.path, e);
     }
   }
 }
