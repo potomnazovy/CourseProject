@@ -1,24 +1,11 @@
 plugins {
     id("java")
-    id("application")
+    id("org.springframework.boot") version "3.2.0"
+    id("io.spring.dependency-management") version "1.1.4"
 }
 
 group = "org.example"
 version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation("com.google.code.gson:gson:2.14.0")
-
-    implementation("ch.qos.logback:logback-classic:1.6.3")
-
-    testImplementation(platform("org.junit:junit-bom:6.0.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-}
 
 java {
     toolchain {
@@ -26,20 +13,25 @@ java {
     }
 }
 
-application {
-    mainClass.set("org.example.Main")
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-web")
+
+    implementation("com.google.code.gson:gson:2.14.0")
+
+    implementation("ch.qos.logback:logback-classic:1.6.3")
+
+    testImplementation(platform("org.junit:junit-bom:6.0.0"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.mockito:mockito-core:5.14.0")
 }
 
 tasks.test {
     useJUnitPlatform()
-}
-
-tasks.jar {
-    manifest {
-        attributes["Main-Class"] = "org.example.Main"
-    }
-    from({
-        configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }
-    })
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
