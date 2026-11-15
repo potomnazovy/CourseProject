@@ -22,8 +22,6 @@ dependencies {
 
     implementation("com.google.code.gson:gson:2.14.0")
 
-    implementation("ch.qos.logback:logback-classic:1.6.3")
-
     testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -34,4 +32,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+configurations.configureEach {
+    resolutionStrategy {
+        force("ch.qos.logback:logback-classic:1.4.14")
+        force("ch.qos.logback:logback-core:1.4.14")
+    }
 }

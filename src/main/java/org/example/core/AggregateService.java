@@ -16,7 +16,9 @@ import java.util.TreeMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AggregateService
 {
   private static final Logger logger = LoggerFactory.getLogger(AggregateService.class);
