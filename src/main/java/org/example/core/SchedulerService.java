@@ -25,6 +25,7 @@ public class SchedulerService
   private static final Logger log = LoggerFactory.getLogger(SchedulerService.class);
   private final AggregateService aggregateService;
   private ExecutorService executorService;
+
   private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
   public SchedulerService(AggregateService aggregateService)
@@ -123,5 +124,10 @@ public class SchedulerService
     {
       Thread.currentThread().interrupt();
     }
+  }
+
+  public AtomicBoolean isRunning()
+  {
+    return isRunning;
   }
 }
