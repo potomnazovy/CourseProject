@@ -1,0 +1,127 @@
+package org.example.core;
+
+import jakarta.annotation.PreDestroy;
+import org.example.exception.StorageException;
+import org.example.model.AggregatedRecord;
+import org.example.model.QueryParams;
+import org.example.storage.JsonStorage;
+import org.example.storage.Storage;
+import org.example.storage.WriteMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+@SuppressWarnings("unused")
+@Service
+public class SchedulerService
+{
+  private static final Logger log = LoggerFactory.getLogger(SchedulerService.class);
+  private final AggregateService aggregateService;
+  private ExecutorService executorService;
+  private final AtomicBoolean isRunning = new AtomicBoolean(false);
+
+  public SchedulerService(AggregateService aggregateService)
+  {
+    this.aggregateService = aggregateService;
+  }
+
+  public synchronized void start(List< String > apis,
+                                 Map< String, QueryParams > params,
+                                 String filePath,
+                                 int n,
+                                 int t)
+  {
+    if (this.isRunning.get())
+    {
+      throw new IllegalArgumentException("Опрос API уже запущен");
+    }
+
+    this.isRunning.set(true);
+
+    executorService = Executors.newFixedThreadPool(n);
+
+    Storage storage = new JsonStorage(filePath);
+
+    for (String apiName : apis)
+    {
+      executorService.submit(new Runnable()
+      {
+        @Override
+        public void run()
+        {
+          while (true)
+          {
+            try
+            {
+              log.info("[START] {} params={}", apiName, params.get(apiName).getParams());
+
+              List< AggregatedRecord > records = aggregateService.aggregate(
+                Collections.singletonList(apiName), params);
+
+              storage.write(records, WriteMode.APPEND);
+
+              log.info("[END] {} OK, saved {} records", apiName, records.size());
+
+              Thread.sleep(t * 1000L);
+            }
+            catch (InterruptedException e)
+            {
+              log.info("Поток для {} был прерван. Завершаем работу.", apiName);
+              Thread.currentThread().interrupt();
+              break;
+            }
+            catch (StorageException e)
+            {
+              log.error("[END] {} ERROR (Storage): {}", apiName, e.getMessage());
+              sleepQuietly(t);
+            }
+            catch (RuntimeException e)
+            {
+              log.error("[END] {} ERROR (Runtime): {}", apiName, e.getMessage());
+              sleepQuietly(t);
+            }
+          }
+        }
+      });
+    }
+  }
+
+  public void stop()
+  {
+    if (!this.isRunning.get())
+    {
+      return;
+    }
+
+    log.info("Остановка планировщика...");
+
+    executorService.shutdownNow();
+
+    this.isRunning.set(false);
+  }
+
+  @PreDestroy
+  public void cleanUp()
+  {
+    stop();
+  }
+
+  private void sleepQuietly(int t)
+  {
+    try
+    {
+      Thread.sleep(t * 1000L);
+    }
+    catch (InterruptedException e)
+    {
+      Thread.currentThread().interrupt();
+    }
+  }
+}
