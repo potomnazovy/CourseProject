@@ -3,6 +3,7 @@ package org.example.model;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("unused")
 public class StartRequest
 {
   private List< String > apis;
