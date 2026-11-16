@@ -2,10 +2,13 @@ package org.example.storage;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import org.example.adaptor.LocalDateTimeAdaptor;
 import org.example.exception.StorageException;
 import org.example.model.AggregatedRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -17,6 +20,8 @@ import java.util.List;
 
 public class JsonStorage implements Storage
 {
+  private static final Logger log = LoggerFactory.getLogger(JsonStorage.class);
+
   private final Gson gson = new GsonBuilder()
     .setPrettyPrinting()
     .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdaptor())
@@ -47,7 +52,16 @@ public class JsonStorage implements Storage
       List< AggregatedRecord > toWrite = records;
       if (mode == WriteMode.APPEND)
       {
-        List< AggregatedRecord > all = readAll();
+        List< AggregatedRecord > all = new ArrayList<>();
+        try
+        {
+          all = readAll();
+        }
+        catch (JsonSyntaxException e)
+        {
+          log.warn("Файл был поврежден, перезаписываем заново");
+        }
+
         all.addAll(records);
         toWrite = all;
       }

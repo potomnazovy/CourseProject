@@ -1,11 +1,14 @@
 package org.example.core;
 
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.MalformedJsonException;
 import org.example.exception.AppException;
 import org.example.http.HttpClient;
 import org.example.model.AggregatedRecord;
 import org.example.model.QueryParams;
 import org.example.source.ApiSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.format.DateTimeParseException;
@@ -13,10 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 
 @Service
 public class AggregateService
@@ -66,9 +65,14 @@ public class AggregateService
       {
         String url = api.buildUrl(params);
         String json = this.httpClient.get(url);
+
         List< AggregatedRecord > curr = api.parse(json, params);
 
         records.addAll(curr);
+      }
+      catch (MalformedJsonException e)
+      {
+        logger.error("Ошибка формата JSON от {}: {}", name, e.getMessage());
       }
       catch (IOException e)
       {
@@ -82,10 +86,6 @@ public class AggregateService
       catch (AppException e)
       {
         logger.error("Ошибка приложения при опросе {}: {}", name, e.getMessage());
-      }
-      catch (JsonSyntaxException e)
-      {
-        logger.error("Ошибка при опросе {} из-за парсинга Gson: {}", name, e.getMessage());
       }
       catch (DateTimeParseException e)
       {

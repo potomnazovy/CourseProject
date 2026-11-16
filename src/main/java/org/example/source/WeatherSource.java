@@ -7,6 +7,7 @@ import org.example.source.dto.WeatherResponse;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class WeatherSource implements ApiSource
@@ -31,6 +32,11 @@ public class WeatherSource implements ApiSource
     Gson gson = new Gson();
 
     WeatherResponse response = gson.fromJson(json, WeatherResponse.class);
+
+    if (response == null || response.getCurrent() == null)
+    {
+      return Collections.emptyList();
+    }
 
     List< AggregatedRecord > list = new ArrayList<>();
 

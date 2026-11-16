@@ -66,7 +66,7 @@ public class SchedulerService
           @Override
           public void run()
           {
-            while (true)
+            while (!Thread.currentThread().isInterrupted())
             {
               try
               {
