@@ -10,6 +10,7 @@ import org.example.source.WeatherSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -35,29 +36,56 @@ public class AppFactory
   }
 
   @Bean
-  public Map< String, QueryParams > defaultParams()
+  public Map< String, List< QueryParams > > defaultParams()
   {
-    Map< String, QueryParams > defParams = new TreeMap<>();
+    Map< String, List< QueryParams > > defParams = new TreeMap<>();
 
-    QueryParams weather = new QueryParams();
-    weather.add("latitude", "52.52");
-    weather.add("longitude", "13.41");
-    weather.add("current", "temperature_2m,wind_speed_10m");
-    weather.add("hourly", "temperature_2m,wind_speed_10m");
-    defParams.put("weather", weather);
+    defParams.put("weather", List.of(
+      createWeatherParams("52.52", "13.41"),
+      createWeatherParams("55.75", "37.62")));
 
-    QueryParams currency = new QueryParams();
-    currency.add("base", "USD");
-    currency.add("symbols", "EUR,GBP,JPY");
-    defParams.put("currency", currency);
+    defParams.put("currency", List.of(
+      createCurrencyParams("USD", "EUR,GBP,JPY"),
+      createCurrencyParams("EUR", "USD,GBP,JPY")));
 
-    QueryParams crypto = new QueryParams();
-    crypto.add("ids", "bitcoin,ethereum");
-    crypto.add("vs_currencies", "usd,eur");
-    crypto.add("include_market_cap", "true");
-    crypto.add("include_24hr_vol", "true");
-    defParams.put("crypto", crypto);
+    defParams.put("crypto", List.of(
+      createCryptoParams("bitcoin"),
+      createCryptoParams("ethereum")));
 
     return defParams;
+  }
+
+  private QueryParams createWeatherParams(String latitude, String longitude)
+  {
+    QueryParams p = new QueryParams();
+
+    p.add("latitude", latitude);
+    p.add("longitude", longitude);
+    p.add("current", "temperature_2m,wind_speed_10m");
+    p.add("hourly", "temperature_2m,wind_speed_10m");
+
+    return p;
+  }
+
+  private QueryParams createCryptoParams(String coinId)
+  {
+    QueryParams p = new QueryParams();
+
+    p.add("ids", coinId);
+    p.add("vs_currencies", "usd,eur");
+    p.add("include_market_cap", "true");
+    p.add("include_24hr_vol", "true");
+
+    return p;
+  }
+
+  private QueryParams createCurrencyParams(String base, String symbols)
+  {
+    QueryParams p = new QueryParams();
+
+    p.add("base", base);
+    p.add("symbols", symbols);
+
+    return p;
   }
 }
