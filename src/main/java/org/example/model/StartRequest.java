@@ -5,12 +5,18 @@ import java.util.Map;
 
 public class StartRequest
 {
+  private List< String > apis;
   private Integer n;
   private Integer t;
   private String format;
   private String file;
   private String mode;
   private Map< String, List< Map< String, String > > > sources;
+
+  public List< String > getApis()
+  {
+    return apis;
+  }
 
   public Integer getN()
   {
@@ -40,6 +46,11 @@ public class StartRequest
   public Map< String, List< Map< String, String > > > getSources()
   {
     return sources;
+  }
+
+  public void setApis(List< String > apis)
+  {
+    this.apis = apis;
   }
 
   public void setT(Integer t)

@@ -34,7 +34,7 @@ public class SchedulerService
   }
 
   public synchronized void start(List< String > apis,
-                                 Map< String, QueryParams > params,
+                                 Map< String, List< QueryParams > > params,
                                  String filePath,
                                  int n,
                                  int t)
@@ -52,45 +52,56 @@ public class SchedulerService
 
     for (String apiName : apis)
     {
-      executorService.submit(new Runnable()
+      List< QueryParams > currParams = params.get(apiName);
+
+      if (currParams == null)
       {
-        @Override
-        public void run()
+        continue;
+      }
+
+      for (QueryParams query : currParams)
+      {
+        executorService.submit(new Runnable()
         {
-          while (true)
+          @Override
+          public void run()
           {
-            try
+            while (true)
             {
-              log.info("[START] {} params={}", apiName, params.get(apiName).getParams());
+              try
+              {
+                log.info("[START] {} params={}", apiName, query.getParams());
 
-              List< AggregatedRecord > records = aggregateService.aggregate(
-                Collections.singletonList(apiName), params);
+                List< AggregatedRecord > records = aggregateService.aggregate(
+                  Collections.singletonList(apiName),
+                  Map.of(apiName, query));
 
-              storage.write(records, WriteMode.APPEND);
+                storage.write(records, WriteMode.APPEND);
 
-              log.info("[END] {} OK, saved {} records", apiName, records.size());
+                log.info("[END] {} OK, saved {} records", apiName, records.size());
 
-              Thread.sleep(t * 1000L);
-            }
-            catch (InterruptedException e)
-            {
-              log.info("Поток для {} был прерван. Завершаем работу.", apiName);
-              Thread.currentThread().interrupt();
-              break;
-            }
-            catch (StorageException e)
-            {
-              log.error("[END] {} ERROR (Storage): {}", apiName, e.getMessage());
-              sleepQuietly(t);
-            }
-            catch (RuntimeException e)
-            {
-              log.error("[END] {} ERROR (Runtime): {}", apiName, e.getMessage());
-              sleepQuietly(t);
+                Thread.sleep(t * 1000L);
+              }
+              catch (InterruptedException e)
+              {
+                log.info("Поток для {} был прерван. Завершаем работу.", apiName);
+                Thread.currentThread().interrupt();
+                break;
+              }
+              catch (StorageException e)
+              {
+                log.error("[END] {} ERROR (Storage): {}", apiName, e.getMessage());
+                sleepQuietly(t);
+              }
+              catch (RuntimeException e)
+              {
+                log.error("[END] {} ERROR (Runtime): {}", apiName, e.getMessage());
+                sleepQuietly(t);
+              }
             }
           }
-        }
-      });
+        });
+      }
     }
   }
 
@@ -126,8 +137,8 @@ public class SchedulerService
     }
   }
 
-  public AtomicBoolean isRunning()
+  public boolean isRunning()
   {
-    return isRunning;
+    return isRunning.get();
   }
 }
