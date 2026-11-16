@@ -1,0 +1,7 @@
+app:
+  default-n: 3
+  default-t: 10
+  default-file-path: data.json
+  default-format: json
+  default-mode: append
+  default-apis: weather,currency,crypto

@@ -28,7 +28,7 @@ public class CsvStorage implements Storage
   }
 
   @Override
-  public void write(List< AggregatedRecord > record, WriteMode mode)
+  public synchronized void write(List< AggregatedRecord > record, WriteMode mode)
   {
     if (record == null)
     {
@@ -65,7 +65,7 @@ public class CsvStorage implements Storage
   }
 
   @Override
-  public List< AggregatedRecord > readAll()
+  public synchronized List< AggregatedRecord > readAll()
   {
     Path currPath = Path.of(this.path);
     if (!Files.exists(currPath))
@@ -106,7 +106,7 @@ public class CsvStorage implements Storage
   }
 
   @Override
-  public List< AggregatedRecord > readBySource(String source)
+  public synchronized List< AggregatedRecord > readBySource(String source)
   {
     if (source == null || source.isBlank())
     {

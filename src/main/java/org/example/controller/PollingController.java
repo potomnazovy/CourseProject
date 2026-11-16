@@ -4,8 +4,8 @@ import org.example.core.SchedulerService;
 import org.example.model.AggregatedRecord;
 import org.example.model.QueryParams;
 import org.example.model.StartRequest;
-import org.example.storage.JsonStorage;
-import org.example.storage.Storage;
+import org.example.storage.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +20,24 @@ public class PollingController
 {
   private final SchedulerService schedulerService;
   private final Map< String, List< QueryParams > > defParams;
+
+  @Value("${app.default-n:3}")
+  private int defaultN;
+
+  @Value("${app.default-t:10}")
+  private int defaultT;
+
+  @Value("${app.default-file-path:data.json}")
+  private String defaultFilePath;
+
+  @Value("${app.default-format:json}")
+  private String defaultFormat;
+
+  @Value("${app.default-mode:append}")
+  private String defaultWriteModeStr;
+
+  @Value("${app.default-apis:weather,currency,crypto}")
+  private List< String > defaultApis;
 
   public PollingController(SchedulerService schedulerService, Map< String, List< QueryParams > > defParams)
   {
@@ -45,11 +63,17 @@ public class PollingController
       request = new StartRequest();
     }
 
-    int n = (request.getN() != null) ? request.getN() : 3;
-    int t = (request.getT() != null) ? request.getT() : 10;
+    int n = (request.getN() != null) ? request.getN() : this.defaultN;
+    int t = (request.getT() != null) ? request.getT() : this.defaultT;
 
-    String filePath = (request.getFile() != null) ? request.getFile() : "data.json";
-    List< String > apis = (request.getApis() != null) ? request.getApis() : List.of("weather", "currency", "crypto");
+    String filePath = (request.getFile() != null) ? request.getFile() : this.defaultFilePath;
+
+    String modeStr = (request.getMode() != null) ? request.getMode() : this.defaultWriteModeStr;
+    WriteMode mode = helperWithWriteMode(modeStr);
+
+    String format = (request.getFormat() != null) ? request.getFormat() : this.defaultFormat;
+
+    List< String > apis = (request.getApis() != null) ? request.getApis() : this.defaultApis;
 
     Map< String, List< QueryParams > > params;
 
@@ -64,7 +88,7 @@ public class PollingController
 
     try
     {
-      this.schedulerService.start(apis, params, filePath, n, t);
+      this.schedulerService.start(apis, params, filePath, mode, format, n, t);
       return ResponseEntity.ok("Опрос успешно запущен. Потоков: " + n + ", интервал: " + t + " сек.");
     }
     catch (IllegalArgumentException e)
@@ -88,9 +112,11 @@ public class PollingController
 
   @GetMapping("/data")
   public ResponseEntity< List< AggregatedRecord > > getData(@RequestParam(required = false) String source,
-                                                            @RequestParam(defaultValue = "data.json") String filePath)
+                                                            @RequestParam(defaultValue = "data.json") String filePath,
+                                                            @RequestParam(defaultValue = "json") String format)
   {
-    Storage storage = new JsonStorage(filePath);
+    Storage storage = StorageFactory.createStorage(format, filePath);
+
     List< AggregatedRecord > list = (source == null)
       ? storage.readAll()
       : storage.readBySource(source);
@@ -121,5 +147,15 @@ public class PollingController
     }
 
     return result;
+  }
+
+  private WriteMode helperWithWriteMode(String writeModeStr)
+  {
+    if (writeModeStr == null)
+    {
+      return WriteMode.APPEND;
+    }
+
+    return "create".equalsIgnoreCase(writeModeStr) ? WriteMode.CREATE : WriteMode.APPEND;
   }
 }

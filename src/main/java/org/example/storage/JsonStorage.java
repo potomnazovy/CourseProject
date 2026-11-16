@@ -40,7 +40,7 @@ public class JsonStorage implements Storage
   }
 
   @Override
-  public void write(List< AggregatedRecord > records, WriteMode mode)
+  public synchronized void write(List< AggregatedRecord > records, WriteMode mode)
   {
     if (records == null)
     {
@@ -76,7 +76,7 @@ public class JsonStorage implements Storage
   }
 
   @Override
-  public List< AggregatedRecord > readAll()
+  public synchronized List< AggregatedRecord > readAll()
   {
     try
     {
@@ -98,7 +98,7 @@ public class JsonStorage implements Storage
   }
 
   @Override
-  public List< AggregatedRecord > readBySource(String source)
+  public synchronized List< AggregatedRecord > readBySource(String source)
   {
     if (source == null || source.isBlank())
     {

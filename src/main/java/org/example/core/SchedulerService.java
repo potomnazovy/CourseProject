@@ -4,6 +4,7 @@ import jakarta.annotation.PreDestroy;
 import org.example.exception.StorageException;
 import org.example.model.AggregatedRecord;
 import org.example.model.QueryParams;
+import org.example.storage.CsvStorage;
 import org.example.storage.JsonStorage;
 import org.example.storage.Storage;
 import org.example.storage.WriteMode;
@@ -36,6 +37,8 @@ public class SchedulerService
   public synchronized void start(List< String > apis,
                                  Map< String, List< QueryParams > > params,
                                  String filePath,
+                                 WriteMode mode,
+                                 String format,
                                  int n,
                                  int t)
   {
@@ -48,7 +51,16 @@ public class SchedulerService
 
     executorService = Executors.newFixedThreadPool(n);
 
-    Storage storage = new JsonStorage(filePath);
+    Storage storage;
+
+    if ("csv".equalsIgnoreCase(format))
+    {
+      storage = new CsvStorage(filePath);
+    }
+    else
+    {
+      storage = new JsonStorage(filePath);
+    }
 
     for (String apiName : apis)
     {
@@ -76,7 +88,7 @@ public class SchedulerService
                   Collections.singletonList(apiName),
                   Map.of(apiName, query));
 
-                storage.write(records, WriteMode.APPEND);
+                storage.write(records, mode);
 
                 log.info("[END] {} OK, saved {} records", apiName, records.size());
 
