@@ -5,11 +5,13 @@ import org.example.storage.WriteMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,9 @@ import static org.mockito.Mockito.when;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class SchedulerServiceTest
 {
+  @TempDir
+  Path tempDir;
+
   @Mock
   private AggregateService serviceMock;
 
@@ -73,7 +78,7 @@ public class SchedulerServiceTest
     assertDoesNotThrow(() -> this.schedulerService.start(
       Collections.emptyList(),
       Collections.emptyMap(),
-      "test_scheduler.json",
+      tempDir.resolve("empty_apis.json").toString(),
       WriteMode.APPEND,
       "json",
       1,
@@ -88,10 +93,12 @@ public class SchedulerServiceTest
 
   private void helper()
   {
+    String filePath = tempDir.resolve("scheduler_test.json").toString();
+
     this.schedulerService.start(
       List.of("weather"),
       Map.of("weather", List.of(new QueryParams())),
-      "test_scheduler.json",
+      filePath,
       WriteMode.APPEND,
       "json",
       1,
