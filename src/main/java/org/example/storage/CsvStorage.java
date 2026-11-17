@@ -40,10 +40,22 @@ public class CsvStorage implements Storage
     try
     {
       boolean fileExists = Files.exists(currPath) && Files.size(currPath) > 0;
-      StandardOpenOption openOption = (mode == WriteMode.APPEND) ?
-        StandardOpenOption.APPEND : StandardOpenOption.CREATE;
 
-      try (BufferedWriter writer = Files.newBufferedWriter(currPath, StandardCharsets.UTF_8, openOption))
+      StandardOpenOption[] openOptions;
+      if (mode == WriteMode.APPEND)
+      {
+        openOptions = new StandardOpenOption[]{StandardOpenOption.APPEND};
+      }
+      else
+      {
+        openOptions = new StandardOpenOption[]
+        {
+          StandardOpenOption.CREATE,
+          StandardOpenOption.TRUNCATE_EXISTING
+        };
+      }
+
+      try (BufferedWriter writer = Files.newBufferedWriter(currPath, StandardCharsets.UTF_8, openOptions))
       {
         if ((!fileExists && mode == WriteMode.APPEND) || mode == WriteMode.CREATE)
         {

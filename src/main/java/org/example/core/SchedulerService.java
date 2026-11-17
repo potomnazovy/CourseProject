@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unused")
@@ -49,7 +50,7 @@ public class SchedulerService
 
     this.isRunning.set(true);
 
-    executorService = Executors.newFixedThreadPool(n);
+    this.executorService = Executors.newFixedThreadPool(n);
 
     Storage storage;
 
@@ -73,7 +74,7 @@ public class SchedulerService
 
       for (QueryParams query : currParams)
       {
-        executorService.submit(new Runnable()
+        this.executorService.submit(new Runnable()
         {
           @Override
           public void run()
@@ -126,7 +127,19 @@ public class SchedulerService
 
     log.info("Остановка планировщика...");
 
-    executorService.shutdownNow();
+    this.executorService.shutdownNow();
+
+    try
+    {
+      if (!this.executorService.awaitTermination(5, TimeUnit.SECONDS))
+      {
+        log.warn("Потоки не завершились за 5 секунд");
+      }
+    }
+    catch (InterruptedException e)
+    {
+      Thread.currentThread().interrupt();
+    }
 
     this.isRunning.set(false);
   }
