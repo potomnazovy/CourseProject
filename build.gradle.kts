@@ -2,6 +2,7 @@ plugins {
     id("java")
     id("org.springframework.boot") version "3.2.0"
     id("io.spring.dependency-management") version "1.1.4"
+    jacoco
 }
 
 group = "org.example"
@@ -22,7 +23,7 @@ dependencies {
 
     implementation("com.google.code.gson:gson:2.14.0")
 
-    testImplementation(platform("org.junit:junit-bom:6.0.0"))
+    testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
@@ -30,8 +31,31 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.14.0")
 }
 
-tasks.test {
+tasks.withType< Test > {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.70".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 configurations.configureEach {
