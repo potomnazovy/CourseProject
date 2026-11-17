@@ -74,7 +74,7 @@ public class StartRequest
     this.mode = mode;
   }
 
-  public void setSources(Map<String, List<Map<String, String>>> sources)
+  public void setSources(Map< String, List< Map< String, String > > > sources)
   {
     this.sources = sources;
   }
