@@ -4,10 +4,7 @@ import jakarta.annotation.PreDestroy;
 import org.example.exception.StorageException;
 import org.example.model.AggregatedRecord;
 import org.example.model.QueryParams;
-import org.example.storage.CsvStorage;
-import org.example.storage.JsonStorage;
-import org.example.storage.Storage;
-import org.example.storage.WriteMode;
+import org.example.storage.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -52,16 +49,7 @@ public class SchedulerService
 
     this.executorService = Executors.newFixedThreadPool(n);
 
-    Storage storage;
-
-    if ("csv".equalsIgnoreCase(format))
-    {
-      storage = new CsvStorage(filePath);
-    }
-    else
-    {
-      storage = new JsonStorage(filePath);
-    }
+    Storage storage = StorageFactory.createStorage(format, filePath);
 
     for (String apiName : apis)
     {
@@ -83,7 +71,7 @@ public class SchedulerService
             {
               try
               {
-                log.info("[START] {} params={}", apiName, query.getParams());
+                log.info("[START] {} {}", apiName, query.getParams());
 
                 List< AggregatedRecord > records = aggregateService.aggregate(
                   Collections.singletonList(apiName),
@@ -91,7 +79,7 @@ public class SchedulerService
 
                 storage.write(records, mode);
 
-                log.info("[END] {} OK, saved {} records", apiName, records.size());
+                log.info("[END] {} OK", apiName);
 
                 Thread.sleep(t * 1000L);
               }
