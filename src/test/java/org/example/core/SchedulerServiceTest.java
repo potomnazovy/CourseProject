@@ -15,6 +15,8 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -89,6 +91,35 @@ public class SchedulerServiceTest
     assertDoesNotThrow(() -> this.schedulerService.stop());
 
     assertFalse(this.schedulerService.isRunning());
+  }
+
+  @Test
+  public void testThreadsActuallyRun() throws InterruptedException
+  {
+    CountDownLatch latch = new CountDownLatch(1);
+
+    when(this.serviceMock.aggregate(anyList(), anyMap())).thenAnswer(invocation ->
+    {
+      latch.countDown();
+      return Collections.emptyList();
+    });
+
+    String filePath = this.tempDir.resolve("latch_test.json").toString();
+    this.schedulerService.start(
+      List.of("weather"),
+      Map.of("weather", List.of(new QueryParams())),
+      filePath,
+      WriteMode.APPEND,
+      "json",
+      1,
+      10
+    );
+
+    boolean completed = latch.await(2, TimeUnit.SECONDS);
+
+    assertTrue(completed, "Поток не запустился или не вызвал aggregate за 2 секунды");
+
+    this.schedulerService.stop();
   }
 
   private void helper()
