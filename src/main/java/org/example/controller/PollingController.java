@@ -1,11 +1,11 @@
 package org.example.controller;
 
+import org.example.core.AppProperties;
 import org.example.core.SchedulerService;
 import org.example.model.AggregatedRecord;
 import org.example.model.QueryParams;
 import org.example.model.StartRequest;
 import org.example.storage.*;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,26 +20,12 @@ public class PollingController
 {
   private final SchedulerService schedulerService;
   private final Map< String, List< QueryParams > > defParams;
+  private final AppProperties appProperties;
 
-  @Value("${app.default-n:3}")
-  private int defaultN;
-
-  @Value("${app.default-t:10}")
-  private int defaultT;
-
-  @Value("${app.default-file-path:data.json}")
-  private String defaultFilePath;
-
-  @Value("${app.default-format:json}")
-  private String defaultFormat;
-
-  @Value("${app.default-mode:append}")
-  private String defaultWriteModeStr;
-
-  @Value("${app.default-apis:weather,currency,crypto}")
-  private List< String > defaultApis;
-
-  public PollingController(SchedulerService schedulerService, Map< String, List< QueryParams > > defParams)
+  public PollingController(
+    SchedulerService schedulerService,
+    Map< String, List< QueryParams > > defParams,
+    AppProperties appProperties)
   {
     if (schedulerService == null)
     {
@@ -53,6 +39,7 @@ public class PollingController
 
     this.schedulerService = schedulerService;
     this.defParams = defParams;
+    this.appProperties = appProperties;
   }
 
   @PostMapping("/start")
@@ -63,17 +50,31 @@ public class PollingController
       request = new StartRequest();
     }
 
-    int n = (request.getN() != null) ? request.getN() : this.defaultN;
-    int t = (request.getT() != null) ? request.getT() : this.defaultT;
+    int n = (request.getN() != null)
+      ? request.getN()
+      : this.appProperties.getDefaultN();
 
-    String filePath = (request.getFile() != null) ? request.getFile() : this.defaultFilePath;
+    int t = (request.getT() != null)
+      ? request.getT()
+      : this.appProperties.getDefaultT();
 
-    String modeStr = (request.getMode() != null) ? request.getMode() : this.defaultWriteModeStr;
+    String filePath = (request.getFile() != null)
+      ? request.getFile()
+      : this.appProperties.getDefaultFilePath();
+
+    String modeStr = (request.getMode() != null)
+      ? request.getMode()
+      : this.appProperties.getDefaultMode();
+
     WriteMode mode = helperWithWriteMode(modeStr);
 
-    String format = (request.getFormat() != null) ? request.getFormat() : this.defaultFormat;
+    String format = (request.getFormat() != null)
+      ? request.getFormat()
+      : this.appProperties.getDefaultFormat();
 
-    List< String > apis = (request.getApis() != null) ? request.getApis() : this.defaultApis;
+    List< String > apis = (request.getApis() != null)
+      ? request.getApis()
+      : this.appProperties.getDefaultApis();
 
     Map< String, List< QueryParams > > params;
 

@@ -3,12 +3,10 @@ package org.example.storage;
 import org.example.exception.StorageException;
 import org.example.model.AggregatedRecord;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,36 +37,32 @@ public class CsvStorage implements Storage
 
     try
     {
-      boolean fileExists = Files.exists(currPath) && Files.size(currPath) > 0;
+      List< AggregatedRecord > toWrite = record;
 
-      StandardOpenOption[] openOptions;
-      if (mode == WriteMode.APPEND)
-      {
-        openOptions = new StandardOpenOption[]{StandardOpenOption.APPEND};
-      }
-      else
-      {
-        openOptions = new StandardOpenOption[]
+      if (mode == WriteMode.APPEND) {
+        List< AggregatedRecord > all = readAll();
+        if (all == null)
         {
-          StandardOpenOption.CREATE,
-          StandardOpenOption.TRUNCATE_EXISTING
-        };
-      }
-
-      try (BufferedWriter writer = Files.newBufferedWriter(currPath, StandardCharsets.UTF_8, openOptions))
-      {
-        if ((!fileExists && mode == WriteMode.APPEND) || mode == WriteMode.CREATE)
-        {
-          writer.write("source,param,field,value,timestamp");
+          all = new ArrayList<>();
         }
 
-        for (AggregatedRecord curr : record)
-        {
-          writer.newLine();
-          writer.write(curr.getSource() + "," + curr.getParam() + "," +
-            curr.getField() + "," + curr.getValue() + "," + curr.getTimestamp());
-        }
+        all.addAll(record);
+        toWrite = all;
       }
+
+      StringBuilder sb = new StringBuilder();
+      sb.append("source,param,field,value,timestamp\n");
+
+      for (AggregatedRecord curr : toWrite)
+      {
+        sb.append(curr.getSource()).append(",")
+          .append(curr.getParam()).append(",")
+          .append(curr.getField()).append(",")
+          .append(curr.getValue()).append(",")
+          .append(curr.getTimestamp()).append("\n");
+      }
+
+      Files.writeString(currPath, sb.toString(), StandardCharsets.UTF_8);
     }
     catch (IOException e)
     {

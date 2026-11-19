@@ -1,6 +1,8 @@
 package org.example.core;
 
 import org.example.model.QueryParams;
+import org.example.source.ApiSource;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,35 +12,64 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AppFactoryTest
 {
+  private AppFactory factory;
+
+  @BeforeEach
+  void setUp()
+  {
+    AppProperties props = new AppProperties();
+
+    props.setSources(Map.of(
+      "weather", List.of(
+        Map.of("latitude", "52.52", "longitude", "13.41"),
+        Map.of("latitude", "55.75", "longitude", "37.62")
+      ),
+      "currency", List.of(
+        Map.of("base", "USD", "symbols", "EUR")
+      )
+    ));
+
+    this.factory = new AppFactory(props);
+  }
 
   @Test
-  void testCreateDefaultParams()
+  void testDefaultParams()
   {
-    AppFactory factory = new AppFactory();
-    Map< String, List< QueryParams > > params = factory.defaultParams();
+    Map< String, List< QueryParams > > params = this.factory.defaultParams();
 
     assertNotNull(params);
-    assertEquals(3, params.size());
+    assertEquals(2, params.size());
 
     assertTrue(params.containsKey("weather"));
     assertEquals(2, params.get("weather").size());
+    assertEquals("52.52", params.get("weather").getFirst().getParams().get("latitude"));
 
     assertTrue(params.containsKey("currency"));
-    assertEquals(2, params.get("currency").size());
+    assertEquals(1, params.get("currency").size());
+    assertEquals("USD", params.get("currency").getFirst().getParams().get("base"));
+  }
 
-    assertTrue(params.containsKey("crypto"));
-    assertEquals(2, params.get("crypto").size());
+  @Test
+  void testEmptySources()
+  {
+    AppProperties emptyProps = new AppProperties();
+    emptyProps.setSources(null);
 
-    QueryParams weather = params.get("weather").getFirst();
-    assertNotNull(weather.getParams().get("latitude"));
-    assertNotNull(weather.getParams().get("longitude"));
+    AppFactory emptyFactory = new AppFactory(emptyProps);
+    Map< String, List< QueryParams > > params = emptyFactory.defaultParams();
 
-    QueryParams currency = params.get("currency").getFirst();
-    assertNotNull(currency.getParams().get("base"));
-    assertNotNull(currency.getParams().get("symbols"));
+    assertNotNull(params);
+    assertTrue(params.isEmpty());
+  }
 
-    QueryParams crypto = params.get("crypto").getFirst();
-    assertNotNull(crypto.getParams().get("ids"));
-    assertNotNull(crypto.getParams().get("vs_currencies"));
+  @Test
+  void testApiSources()
+  {
+    Map< String, ApiSource> sources = this.factory.apiSources();
+
+    assertEquals(3, sources.size());
+    assertTrue(sources.containsKey("weather"));
+    assertTrue(sources.containsKey("currency"));
+    assertTrue(sources.containsKey("crypto"));
   }
 }

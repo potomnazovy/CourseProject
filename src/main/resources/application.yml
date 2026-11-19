@@ -5,9 +5,31 @@ app:
   default-format: json
   default-mode: append
   default-apis: weather,currency,crypto
+
+  sources:
+    weather:
+      - latitude: "52.52"
+        longitude: "13.41"
+        current: "temperature_2m,wind_speed_10m"
+        hourly: "temperature_2m,wind_speed_10m"
+      - latitude: "55.75"
+        longitude: "37.62"
+        current: "temperature_2m,wind_speed_10m"
+        hourly: "temperature_2m,wind_speed_10m"
+    currency:
+      - base: "USD"
+        symbols: "EUR,GBP,JPY"
+      - base: "EUR"
+        symbols: "USD,GBP,JPY"
+    crypto:
+      - ids: "bitcoin,ethereum"
+        vs_currencies: "usd,eur"
+        include_market_cap: "true"
+        include_24hr_vol: "true"
+
 logging:
   file:
-    name: /Users/kirillvasakin/IdeaProjects/CourseProject/logs/app.log
+    name: logs/app.log
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

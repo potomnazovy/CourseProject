@@ -1,10 +1,11 @@
 package org.example.controller;
 
+import org.example.core.AppProperties;
 import org.example.core.SchedulerService;
 import org.example.model.AggregatedRecord;
-import org.example.model.QueryParams;
 import org.example.storage.JsonStorage;
 import org.example.storage.WriteMode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +17,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PollingController.class)
 class PollingControllerTest
@@ -36,8 +38,19 @@ class PollingControllerTest
   @MockBean
   private SchedulerService schedulerService;
 
-  @MockBean(name = "defaultParams")
-  private Map< String, List< QueryParams > > defaultParams;
+  @MockBean
+  private AppProperties appProperties;
+
+  @BeforeEach
+  public void setUp()
+  {
+    when(this.appProperties.getDefaultN()).thenReturn(3);
+    when(this.appProperties.getDefaultT()).thenReturn(10);
+    when(this.appProperties.getDefaultFilePath()).thenReturn("data.json");
+    when(this.appProperties.getDefaultFormat()).thenReturn("json");
+    when(this.appProperties.getDefaultMode()).thenReturn("append");
+    when(this.appProperties.getDefaultApis()).thenReturn(List.of("weather", "currency", "crypto"));
+  }
 
   @Test
   void testStartEndpoint() throws Exception
