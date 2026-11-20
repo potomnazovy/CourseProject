@@ -4,7 +4,9 @@ import jakarta.annotation.PreDestroy;
 import org.example.exception.StorageException;
 import org.example.model.AggregatedRecord;
 import org.example.model.QueryParams;
-import org.example.storage.*;
+import org.example.storage.Storage;
+import org.example.storage.StorageFactory;
+import org.example.storage.WriteMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -12,18 +14,18 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@SuppressWarnings("unused")
 @Service
 public class SchedulerService
 {
   private static final Logger log = LoggerFactory.getLogger(SchedulerService.class);
   private final AggregateService aggregateService;
-  private ExecutorService executorService;
+
+  private ScheduledExecutorService scheduledExecutor;
 
   private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -47,7 +49,7 @@ public class SchedulerService
 
     this.isRunning.set(true);
 
-    this.executorService = Executors.newFixedThreadPool(n);
+    this.scheduledExecutor = Executors.newScheduledThreadPool(n);
 
     Storage storage = StorageFactory.createStorage(format, filePath);
 
@@ -62,47 +64,42 @@ public class SchedulerService
 
       for (QueryParams query : currParams)
       {
-        this.executorService.submit(new Runnable()
-        {
-          @Override
-          public void run()
-          {
-            while (!Thread.currentThread().isInterrupted())
-            {
-              try
-              {
-                log.info("[START] {} {}", apiName, query.getParams());
-
-                List< AggregatedRecord > records = aggregateService.aggregate(
-                  Collections.singletonList(apiName),
-                  Map.of(apiName, query));
-
-                storage.write(records, mode);
-
-                log.info("[END] {} OK", apiName);
-
-                Thread.sleep(t * 1000L);
-              }
-              catch (InterruptedException e)
-              {
-                log.info("Поток для {} был прерван. Завершаем работу.", apiName);
-                Thread.currentThread().interrupt();
-                break;
-              }
-              catch (StorageException e)
-              {
-                log.error("[END] {} ERROR (Storage): {}", apiName, e.getMessage());
-                sleepQuietly(t);
-              }
-              catch (RuntimeException e)
-              {
-                log.error("[END] {} ERROR (Runtime): {}", apiName, e.getMessage());
-                sleepQuietly(t);
-              }
-            }
-          }
-        });
+        scheduledExecutor.scheduleWithFixedDelay(
+          () -> executePollingTask(apiName, query, storage, mode),
+          0,
+          t,
+          TimeUnit.SECONDS
+        );
       }
+    }
+
+    log.info("Планировщик запущен. Потоков: {}, интервал: {} сек.", n, t);
+  }
+
+  private void executePollingTask(String apiName,
+                                  QueryParams query,
+                                  Storage storage,
+                                  WriteMode mode)
+  {
+    try
+    {
+      log.info("[START] {} {}", apiName, query.getParams());
+
+      List<AggregatedRecord> records = aggregateService.aggregate(
+        Collections.singletonList(apiName),
+        Map.of(apiName, query));
+
+      storage.write(records, mode);
+
+      log.info("[END] {} OK", apiName);
+    }
+    catch (StorageException e)
+    {
+      log.error("[END] {} ERROR (Storage): {}", apiName, e.getMessage());
+    }
+    catch (RuntimeException e)
+    {
+      log.error("[END] {} ERROR ({}): {}", apiName, e.getClass().getSimpleName(), e.getMessage());
     }
   }
 
@@ -115,11 +112,11 @@ public class SchedulerService
 
     log.info("Остановка планировщика...");
 
-    this.executorService.shutdownNow();
+    this.scheduledExecutor.shutdownNow();
 
     try
     {
-      if (!this.executorService.awaitTermination(5, TimeUnit.SECONDS))
+      if (!this.scheduledExecutor.awaitTermination(5, TimeUnit.SECONDS))
       {
         log.warn("Потоки не завершились за 5 секунд");
       }
@@ -136,18 +133,6 @@ public class SchedulerService
   public void cleanUp()
   {
     stop();
-  }
-
-  private void sleepQuietly(int t)
-  {
-    try
-    {
-      Thread.sleep(t * 1000L);
-    }
-    catch (InterruptedException e)
-    {
-      Thread.currentThread().interrupt();
-    }
   }
 
   public boolean isRunning()

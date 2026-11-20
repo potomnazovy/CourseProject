@@ -24,32 +24,32 @@ public class AppProperties
 
   public int getDefaultN()
   {
-    return defaultN;
+    return this.defaultN;
   }
 
   public int getDefaultT()
   {
-    return defaultT;
+    return this.defaultT;
   }
 
   public String getDefaultFilePath()
   {
-    return defaultFilePath;
+    return this.defaultFilePath;
   }
 
   public String getDefaultFormat()
   {
-    return defaultFormat;
+    return this.defaultFormat;
   }
 
   public String getDefaultMode()
   {
-    return defaultMode;
+    return this.defaultMode;
   }
 
   public List< String > getDefaultApis()
   {
-    return defaultApis;
+    return this.defaultApis;
   }
 
   public Map< String, List< Map< String, String > > > getSources()
